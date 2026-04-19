@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blair — Bermuda Cut</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0f0e;
+    --bg2: #151614;
+    --bg3: #1c1e1b;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0ede8;
+    --text2: #8a8880;
+    --text3: #55534f;
+    --green: #7db87a;
+    --green-bg: rgba(125,184,122,0.1);
+    --green-border: rgba(125,184,122,0.25);
+    --amber: #d4a84b;
+    --amber-bg: rgba(212,168,75,0.1);
+    --blue: #6a9fd8;
+    --blue-bg: rgba(106,159,216,0.1);
+    --coral: #d47a5a;
+    --coral-bg: rgba(212,122,90,0.1);
+    --purple: #9b87cc;
+    --purple-bg: rgba(155,135,204,0.1);
+    --pink: #c47a9a;
+    --pink-bg: rgba(196,122,154,0.1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; min-height: 100vh; }
+  
+  /* Layout */
+  .app { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+  .sidebar { background: var(--bg2); border-right: 1px solid var(--border); padding: 28px 0; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+  .main { padding: 36px 40px; overflow-y: auto; }
+
+  /* Sidebar */
+  .sidebar-logo { padding: 0 24px 28px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .sidebar-logo-main { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+  .sidebar-logo-sub { font-size: 11px; color: var(--text3); margin-top: 2px; font-family: 'DM Mono', monospace; }
+  .sidebar-section { padding: 8px 24px 4px; font-size: 9px; font-weight: 600; color: var(--text3); letter-spacing: .12em; text-transform: uppercase; font-family: 'DM Mono', monospace; margin-top: 8px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 24px; cursor: pointer; border-left: 2px solid transparent; transition: all .15s; color: var(--text2); font-size: 13px; }
+  .nav-item:hover { color: var(--text); background: var(--bg3); }
+  .nav-item.active { color: var(--text); border-left-color: var(--green); background: var(--green-bg); }
+  .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
+  .nav-item.active .nav-dot { background: var(--green); }
+  .nav-item.done .nav-dot { background: var(--green); }
+  .nav-item.done { color: var(--text2); }
+  .sidebar-footer { margin-top: auto; padding: 20px 24px 0; border-top: 1px solid var(--border); }
+  .days-chip { background: var(--amber-bg); border: 1px solid rgba(212,168,75,0.2); border-radius: 8px; padding: 10px 12px; }
+  .days-num { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 700; color: var(--amber); }
+  .days-label { font-size: 11px; color: var(--text2); margin-top: 1px; }
+
+  /* Panels */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Page header */
+  .page-header { margin-bottom: 32px; }
+  .page-title { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 700; color: var(--text); letter-spacing: -0.03em; }
+  .page-sub { font-size: 13px; color: var(--text2); margin-top: 6px; }
+
+  /* Stats row */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+  .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+  .stat-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .08em; font-family: 'DM Mono', monospace; margin-bottom: 8px; }
+  .stat-value { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+  .stat-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+  /* Progress bar */
+  .prog-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 28px; }
+  .prog-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .prog-title { font-size: 12px; font-weight: 500; color: var(--text2); }
+  .prog-pct { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--green); }
+  .prog-track { height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width .4s ease; }
+
+  /* Week nav */
+  .week-nav { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
+  .week-btn { font-family: 'DM Mono', monospace; font-size: 11px; padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text2); cursor: pointer; transition: all .15s; }
+  .week-btn:hover { border-color: var(--border2); color: var(--text); }
+  .week-btn.active { background: var(--green-bg); border-color: var(--green-border); color: var(--green); }
+  .week-btn.done { border-color: rgba(125,184,122,0.15); color: var(--green); opacity: 0.6; }
+
+  /* Phase badge */
+  .phase-badge { display: inline-block; font-size: 10px; font-family: 'DM Mono', monospace; padding: 3px 10px; border-radius: 4px; }
+  .phase-reset { background: var(--blue-bg); color: var(--blue); }
+  .phase-build { background: var(--green-bg); color: var(--green); }
+  .phase-push { background: var(--coral-bg); color: var(--coral); }
+  .phase-peak { background: var(--amber-bg); color: var(--amber); }
+  .phase-arrive { background: var(--purple-bg); color: var(--purple); }
+
+  /* Day table */
+  .week-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 24px; }
+  .week-card-header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .week-card-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 600; }
+  .day-row { display: grid; grid-template-columns: 90px 120px 1fr 36px; align-items: center; gap: 16px; padding: 13px 20px; border-bottom: 1px solid var(--border); transition: background .1s; }
+  .day-row:last-child { border-bottom: none; }
+  .day-row:hover { background: var(--bg3); }
+  .day-row.completed { opacity: 0.45; }
+  .day-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .day-tag { font-size: 10px; font-family: 'DM Mono', monospace; padding: 3px 9px; border-radius: 4px; display: inline-block; }
+  .tag-strength { background: var(--blue-bg); color: var(--blue); }
+  .tag-zone2 { background: var(--green-bg); color: var(--green); }
+  .tag-hiit { background: var(--coral-bg); color: var(--coral); }
+  .tag-yoga { background: var(--purple-bg); color: var(--purple); }
+  .tag-social { background: var(--pink-bg); color: var(--pink); }
+  .tag-rest { background: rgba(138,136,128,0.1); color: var(--text2); }
+  .tag-travel { background: var(--amber-bg); color: var(--amber); }
+  .day-detail { font-size: 12px; color: var(--text2); line-height: 1.5; }
+  .checkbox { width: 20px; height: 20px; border-radius: 5px; border: 1.5px solid var(--border2); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .15s; }
+  .checkbox:hover { border-color: var(--green); }
+  .checkbox.checked { background: var(--green); border-color: var(--green); }
+  .checkbox.checked::after { content: ''; display: block; width: 5px; height: 9px; border: 2px solid #0e0f0e; border-top: none; border-left: none; transform: rotate(45deg) translate(-1px, -2px); }
+
+  /* Weight log */
+  .section-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 14px; }
+  .weight-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 28px; }
+  .weight-cell { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; text-align: center; }
+  .weight-cell.current-week { border-color: var(--amber); }
+  .weight-cell-label { font-size: 10px; color: var(--text3); font-family: 'DM Mono', monospace; margin-bottom: 8px; }
+  .weight-cell input { width: 100%; background: transparent; border: none; outline: none; text-align: center; font-size: 16px; font-weight: 500; font-family: 'Syne', sans-serif; color: var(--text); }
+  .weight-cell input::placeholder { color: var(--text3); font-size: 13px; }
+  .weight-cell-sub { font-size: 10px; color: var(--text3); margin-top: 4px; }
+
+  /* Checklist */
+  .checklist { display: flex; flex-direction: column; gap: 6px; margin-bottom: 28px; }
+  .check-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; transition: background .1s; }
+  .check-item:hover { background: var(--bg3); }
+  .check-item.checked-item { opacity: 0.5; }
+  .check-text { font-size: 13px; color: var(--text); flex: 1; }
+  .check-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .check-item.checked-item .check-text { text-decoration: line-through; color: var(--text2); }
+
+  /* Checkpoints */
+  .checkpoints-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 28px; }
+  .cp-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .cp-card.now { border-color: var(--coral); background: var(--coral-bg); }
+  .cp-week-label { font-size: 10px; font-family: 'DM Mono', monospace; margin-bottom: 5px; }
+  .cp-card.now .cp-week-label { color: var(--coral); }
+  .cp-card:not(.now) .cp-week-label { color: var(--text3); }
+  .cp-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+  .cp-detail { font-size: 11px; color: var(--text2); line-height: 1.6; }
+  .cp-btn { margin-top: 10px; background: transparent; border: 1px solid var(--border2); border-radius: 6px; padding: 6px 12px; font-size: 11px; color: var(--text2); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all .15s; }
+  .cp-btn:hover { color: var(--text); border-color: var(--text2); }
+
+  /* Daily rules */
+  .rules-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 28px; }
+  .rule-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .rule-title { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+  .rule-detail { font-size: 11px; color: var(--text2); line-height: 1.5; }
+  .rule-accent { border-left: 2px solid var(--green); padding-left: 12px; border-radius: 0 10px 10px 0; }
+
+  /* Meals panel */
+  .meal-day { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 12px; }
+  .meal-day-header { padding: 12px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .meal-day-name { font-size: 13px; font-weight: 500; }
+  .meal-slots { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .meal-slot { padding: 12px 18px; border-right: 1px solid var(--border); }
+  .meal-slot:last-child { border-right: none; }
+  .meal-slot-label { font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: .1em; font-family: 'DM Mono', monospace; margin-bottom: 5px; }
+  .meal-slot-main { font-size: 12px; color: var(--text); line-height: 1.4; }
+  .meal-slot-kcal { font-size: 10px; color: var(--text3); margin-top: 4px; font-family: 'DM Mono', monospace; }
+
+  /* Canteen */
+  .canteen-day { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 10px; }
+  .canteen-header { padding: 12px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+  .canteen-day-name { font-size: 13px; font-weight: 500; }
+  .canteen-verdict { font-size: 12px; color: var(--text2); padding: 10px 18px 6px; line-height: 1.5; }
+  .canteen-picks { padding: 6px 18px 12px; display: flex; flex-wrap: wrap; gap: 5px; }
+  .pick { font-size: 11px; padding: 3px 9px; border-radius: 4px; }
+  .pick-yes { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+  .pick-no { background: rgba(212,122,90,0.1); color: var(--coral); border: 1px solid rgba(212,122,90,0.2); }
+  .pick-ok { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(212,168,75,0.2); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { position: static; height: auto; }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .weight-grid { grid-template-columns: repeat(4, 1fr); }
+    .checkpoints-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-main">Blair — Bermuda Cut</div>
+    <div class="sidebar-logo-sub">9 July 2026 · 10 weeks</div>
+  </div>
+
+  <div class="sidebar-section">Overview</div>
+  <div class="nav-item active" onclick="showPanel('dashboard',this)"><div class="nav-dot"></div>Dashboard</div>
+  <div class="nav-item" onclick="showPanel('setup',this)"><div class="nav-dot"></div>Setup checklist</div>
+  <div class="nav-item" onclick="showPanel('checkpoints',this)"><div class="nav-dot"></div>Plan checkpoints</div>
+
+  <div class="sidebar-section">Training</div>
+  <div class="nav-item" onclick="showPanel('weekly',this)"><div class="nav-dot"></div>Weekly schedule</div>
+  <div class="nav-item" onclick="showPanel('workouts',this)"><div class="nav-dot"></div>Workout detail</div>
+
+  <div class="sidebar-section">Nutrition</div>
+  <div class="nav-item" onclick="showPanel('meals',this)"><div class="nav-dot"></div>Meal plan</div>
+  <div class="nav-item" onclick="showPanel('canteen',this)"><div class="nav-dot"></div>Canteen guide</div>
+  <div class="nav-item" onclick="showPanel('prep',this)"><div class="nav-dot"></div>Sunday prep</div>
+
+  <div class="sidebar-section">Daily</div>
+  <div class="nav-item" onclick="showPanel('rules',this)"><div class="nav-dot"></div>Non-negotiables</div>
+  <div class="nav-item" onclick="showPanel('weight',this)"><div class="nav-dot"></div>Weight log</div>
+
+  <div class="sidebar-footer">
+    <div class="days-chip">
+      <div class="days-num" id="sidebar-days">81</div>
+      <div class="days-label">days to Bermuda</div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- DASHBOARD -->
+<div class="panel active" id="panel-dashboard">
+  <div class="page-header">
+    <div class="page-title">Dashboard</div>
+    <div class="page-sub">Your 10-week Bermuda cut — starting 20 April 2026</div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-label">Start weight</div><div class="stat-value">90kg</div><div class="stat-sub">198.4 lbs</div></div>
+    <div class="stat-card"><div class="stat-label">Current week</div><div class="stat-value" id="dash-week">Week 1</div><div class="stat-sub" id="dash-phase">Reset phase</div></div>
+    <div class="stat-card"><div class="stat-label">Days to Bermuda</div><div class="stat-value" id="dash-days">81</div><div class="stat-sub">9 July 2026</div></div>
+    <div class="stat-card"><div class="stat-label">Target</div><div class="stat-value">80–83kg</div><div class="stat-sub">176–183 lbs</div></div>
+  </div>
+  <div class="prog-wrap">
+    <div class="prog-header"><span class="prog-title">10-week progress</span><span class="prog-pct" id="dash-overall-pct">0%</span></div>
+    <div class="prog-track"><div class="prog-fill" id="dash-overall-bar" style="width:0%"></div></div>
+  </div>
+  <div class="section-title">This week at a glance</div>
+  <div class="week-card" id="dash-week-card"></div>
+  <div class="section-title" style="margin-top:24px">Today's non-negotiables</div>
+  <div class="checklist" id="dash-today"></div>
+</div>
+
+<!-- SETUP -->
+<div class="panel" id="panel-setup">
+  <div class="page-header">
+    <div class="page-title">Setup checklist</div>
+    <div class="page-sub">Do these before Sunday 20 April — your plan starts here</div>
+  </div>
+  <div class="checklist" id="setup-list"></div>
+</div>
+
+<!-- CHECKPOINTS -->
+<div class="panel" id="panel-checkpoints">
+  <div class="page-header">
+    <div class="page-title">Plan checkpoints</div>
+    <div class="page-sub">When to come back to Claude and what to ask for</div>
+  </div>
+  <div class="checkpoints-grid" id="cp-grid"></div>
+</div>
+
+<!-- WEEKLY -->
+<div class="panel" id="panel-weekly">
+  <div class="page-header">
+    <div class="page-title">Weekly schedule</div>
+    <div class="page-sub">Tick off each session as you complete it</div>
+  </div>
+  <div class="week-nav" id="week-nav"></div>
+  <div class="prog-wrap">
+    <div class="prog-header"><span class="prog-title" id="week-prog-label">Week 1 progress</span><span class="prog-pct" id="week-prog-pct">0%</span></div>
+    <div class="prog-track"><div class="prog-fill" id="week-prog-fill" style="width:0%"></div></div>
+  </div>
+  <div class="week-card" id="week-detail-card"></div>
+</div>
+
+<!-- WORKOUTS -->
+<div class="panel" id="panel-workouts">
+  <div class="page-header">
+    <div class="page-title">Workout detail</div>
+    <div class="page-sub">Exercises, sets and reps for each strength session</div>
+  </div>
+  <div id="workout-cards"></div>
+</div>
+
+<!-- MEALS -->
+<div class="panel" id="panel-meals">
+  <div class="page-header">
+    <div class="page-title">Meal plan</div>
+    <div class="page-sub">Daily food structure — smoothie, canteen, prepped dinner</div>
+  </div>
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:20px">
+    <div class="section-title" style="margin-bottom:12px">Daily structure — every weekday</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+      <div style="border-right:1px solid var(--border);padding-right:16px"><div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:6px">BREAKFAST · HOME</div><div style="font-size:13px;color:var(--text);margin-bottom:4px">Protein smoothie</div><div style="font-size:11px;color:var(--text2);line-height:1.5">2 scoops whey · frozen spinach · frozen berries · ½ banana · almond milk · 1 tbsp nut butter</div><div style="font-size:10px;color:var(--text3);margin-top:6px;font-family:'DM Mono',monospace">~500 kcal · 52g protein</div></div>
+      <div style="border-right:1px solid var(--border);padding:0 16px"><div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:6px">LUNCH · UBER CANTEEN</div><div style="font-size:13px;color:var(--text);margin-bottom:4px">Biggest meal of the day</div><div style="font-size:11px;color:var(--text2);line-height:1.5">Protein + veg first. Small carbs. Skip dessert, 3pm snacks and canteen smoothies always.</div><div style="font-size:10px;color:var(--text3);margin-top:6px;font-family:'DM Mono',monospace">~650 kcal · 55g protein</div></div>
+      <div style="padding-left:16px"><div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:6px">DINNER · HOME (PREPPED)</div><div style="font-size:13px;color:var(--text);margin-bottom:4px">Pull from the fridge</div><div style="font-size:11px;color:var(--text2);line-height:1.5">Already made Sunday. Heat and eat within 10 min of getting home. No Uber Eats.</div><div style="font-size:10px;color:var(--text3);margin-top:6px;font-family:'DM Mono',monospace">~470 kcal · 50g protein</div></div>
+    </div>
+  </div>
+  <div class="section-title">Weekend meals</div>
+  <div id="weekend-meals"></div>
+</div>
+
+<!-- CANTEEN -->
+<div class="panel" id="panel-canteen">
+  <div class="page-header">
+    <div class="page-title">Canteen guide</div>
+    <div class="page-sub">This week's Uber Amsterdam menu — best choices highlighted</div>
+  </div>
+  <div id="canteen-days"></div>
+</div>
+
+<!-- PREP -->
+<div class="panel" id="panel-prep">
+  <div class="page-header">
+    <div class="page-title">Sunday meal prep</div>
+    <div class="page-sub">9 meals in ~2 hours — covers all weeknight dinners + weekend lunch & dinner</div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px">
+    <div class="stat-card"><div class="stat-label">Meals prepped</div><div class="stat-value">9</div><div class="stat-sub">All dinners + wknd lunch</div></div>
+    <div class="stat-card"><div class="stat-label">Prep time</div><div class="stat-value">~2 hrs</div><div class="stat-sub">After yoga</div></div>
+    <div class="stat-card"><div class="stat-label">Containers</div><div class="stat-value">9</div><div class="stat-sub">MCIRCO 10-set covers it</div></div>
+    <div class="stat-card"><div class="stat-label">Est. cost</div><div class="stat-value">€28–35</div><div class="stat-sub">Albert Heijn or Jumbo</div></div>
+  </div>
+  <div id="prep-content"></div>
+</div>
+
+<!-- RULES -->
+<div class="panel" id="panel-rules">
+  <div class="page-header">
+    <div class="page-title">Non-negotiables</div>
+    <div class="page-sub">Every single day — these are the plan</div>
+  </div>
+  <div class="rules-grid" id="rules-grid"></div>
+  <div class="section-title">Sleep protocol</div>
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:24px">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr)">
+      <div style="padding:16px 18px;border-right:1px solid var(--border);text-align:center"><div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:6px">PHONE DOWN</div><div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--text)">22:30</div></div>
+      <div style="padding:16px 18px;border-right:1px solid var(--border);text-align:center"><div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:6px">LIGHTS OUT</div><div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--text)">23:00</div></div>
+      <div style="padding:16px 18px;border-right:1px solid var(--border);text-align:center"><div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:6px">ALARM</div><div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--amber)">07:30</div></div>
+      <div style="padding:16px 18px;text-align:center"><div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:6px">SLEEP</div><div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--green)">8.5h</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- WEIGHT LOG -->
+<div class="panel" id="panel-weight">
+  <div class="page-header">
+    <div class="page-title">Weight log</div>
+    <div class="page-sub">Weigh every morning, enter the weekly average each Monday</div>
+  </div>
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:24px;font-size:13px;color:var(--text2);line-height:1.6">
+    Weigh yourself every morning after waking, before eating. Daily weight fluctuates 1–2kg with water and sodium. Log your <strong style="color:var(--text)">7-day average</strong> each Monday — judge the trend, not the daily number.
+  </div>
+  <div class="weight-grid" id="weight-full-grid"></div>
+  <div id="weight-chart-wrap" style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:24px">
+    <div class="section-title" style="margin-bottom:16px">Progress vs projection</div>
+    <div style="position:relative;height:200px"><canvas id="weightChart" role="img" aria-label="Weight progress chart comparing actual vs projected"></canvas></div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────
+const BERMUDA = new Date('2026-07-09');
+
+const weeks = [
+  {label:'Week 1',dates:'20–26 Apr',phase:'Reset',phaseClass:'phase-reset',
+   days:[
+    {name:'Monday',tag:'strength',detail:'Upper push — Beethovenstraat, 19:30. Bench, OHP, incline DB, lateral raises, tricep pushdowns.'},
+    {name:'Tuesday',tag:'zone2',detail:'35–40 min run or cycling — outdoors or Beethovenstraat, 19:30.'},
+    {name:'Wednesday',tag:'hiit',detail:'HIIT class — Koningsweg, pre-booked 19:30. End by 20:15.'},
+    {name:'Thursday',tag:'social',detail:'Office drinks — full rest day. Eat protein before going out.'},
+    {name:'Friday',tag:'strength',detail:'Upper pull — Beethovenstraat, 19:00. Row, pull-ups, cable row, face pulls, curls.'},
+    {name:'Saturday',tag:'strength',detail:'Lower body — Beethovenstraat, 10:00. Squat, RDL, leg press, lunges, leg curl.'},
+    {name:'Sunday',tag:'yoga',detail:'Yoga class — Koningsweg morning. Meal prep after — 9 meals, 2 hrs.'},
+  ]},
+  {label:'Week 2',dates:'27 Apr–3 May',phase:'Reset',phaseClass:'phase-reset',
+   days:[
+    {name:'Monday',tag:'strength',detail:'Upper push — increase weight if last week felt easy.'},
+    {name:'Tuesday',tag:'zone2',detail:'35–40 min — maintain or beat last week\'s pace.'},
+    {name:'Wednesday',tag:'hiit',detail:'HIIT class — Koningsweg. Push harder than week 1.'},
+    {name:'Thursday',tag:'social',detail:'Office drinks — rest day.'},
+    {name:'Friday',tag:'strength',detail:'Upper pull — progressive overload, heavier than week 1.'},
+    {name:'Saturday',tag:'strength',detail:'Lower body — add weight to squat and deadlift.'},
+    {name:'Sunday',tag:'yoga',detail:'Yoga — Koningsweg. Meal prep with rotated dinner recipe.'},
+  ]},
+  {label:'Week 3',dates:'4–10 May',phase:'Build',phaseClass:'phase-build',
+   days:[
+    {name:'Monday',tag:'strength',detail:'Upper push — come back to Claude for recipe rotation + check-in.'},
+    {name:'Tuesday',tag:'zone2',detail:'40 min — increase duration by 5 min this week.'},
+    {name:'Wednesday',tag:'hiit',detail:'HIIT class — Koningsweg. Max effort every interval.'},
+    {name:'Thursday',tag:'social',detail:'Office drinks — rest day.'},
+    {name:'Friday',tag:'strength',detail:'Upper pull — heavier than week 2.'},
+    {name:'Saturday',tag:'strength',detail:'Lower body — push the squat.'},
+    {name:'Sunday',tag:'yoga',detail:'Yoga + meal prep with new batch recipes.'},
+  ]},
+  {label:'Week 4',dates:'11–17 May',phase:'Build',phaseClass:'phase-build',
+   days:[
+    {name:'Monday',tag:'strength',detail:'Upper push — week 4 check-in + refeed day assessment.'},
+    {name:'Tuesday',tag:'zone2',detail:'40–45 min Zone 2.'},
+    {name:'Wednesday',tag:'hiit',detail:'HIIT class — Koningsweg.'},
+    {name:'Thursday',tag:'social',detail:'Office drinks — consider 1 drink only from week 4 onwards.'},
+    {name:'Friday',tag:'strength',detail:'Upper pull.'},
+    {name:'Saturday',tag:'strength',detail:'Lower body — refeed day if flagged.'},
+    {name:'Sunday',tag:'yoga',detail:'Yoga + meal prep.'},
+  ]},
+  {label:'Week 5',dates:'18–24 May',phase:'Push',phaseClass:'phase-push',
+   days:[
+    {name:'Monday',tag:'strength',detail:'Upper push — carb cycling starts this week. Come back to Claude.'},
+    {name:'Tuesday',tag:'zone2',detail:'45 min — pace should be improving.'},
+    {name:'Wednesday',tag:'hiit',detail:'HIIT class — Koningsweg. Peak effort.'},
+    {name:'Thursday',tag:'social',detail:'Office drinks — rest day.'},
+    {name:'Friday',tag:'strength',detail:'Upper pull.'},
+    {name:'Saturday',tag:'strength',detail:'Lower body.'},
+    {name:'Sunday',tag:'yoga',detail:'Yoga + meal prep.'},
+  ]},
+  {label:'Week 6',dates:'25–31 May',phase:'Push',phaseClass:'phase-push',
+   days:[
+    {name:'Monday',tag:'strength',detail:'Upper push.'},
+    {name:'Tuesday',tag:'zone2',detail:'45 min Zone 2.'},
+    {name:'Wednesday',tag:'hiit',detail:'HIIT class — Koningsweg.'},
+    {name:'Thursday',tag:'social',detail:'Office drinks.'},
+    {name:'Friday',tag:'strength',detail:'Upper pull.'},
+    {name:'Saturday',tag:'strength',detail:'Lower body.'},
+    {name:'Sunday',tag:'yoga',detail:'Yoga + meal prep.'},
+  ]},
+  {label:'Week 7',dates:'1–7 Jun',phase:'Push',phaseClass:'phase-push',
+   days:[
+    {name:'Monday',tag:'strength',detail:'Upper push.'},
+    {name:'Tuesday',tag:'zone2',detail:'50 min Zone 2.'},
+    {name:'Wednesday',tag:'hiit',detail:'HIIT class — Koningsweg.'},
+    {name:'Thursday',tag:'social',detail:'Office drinks.'},
+    {name:'Friday',tag:'strength',detail:'Upper pull.'},
+    {name:'Saturday',tag:'strength',detail:'Lower body.'},
+    {name:'Sunday',tag:'yoga',detail:'Yoga + meal prep.'},
+  ]},
+  {label:'Week 8',dates:'8–14 Jun',phase:'Peak',phaseClass:'phase-peak',
+   days:[
+    {name:'Monday',tag:'strength',detail:'Upper push — come back to Claude for peak week plan + sodium strategy.'},
+    {name:'Tuesday',tag:'zone2',detail:'50 min Zone 2.'},
+    {name:'Wednesday',tag:'hiit',detail:'HIIT class — Koningsweg.'},
+    {name:'Thursday',tag:'social',detail:'Office drinks.'},
+    {name:'Friday',tag:'strength',detail:'Upper pull.'},
+    {name:'Saturday',tag:'strength',detail:'Lower body.'},
+    {name:'Sunday',tag:'yoga',detail:'Yoga + meal prep.'},
+  ]},
+  {label:'Week 9',dates:'15–21 Jun',phase:'Peak',phaseClass:'phase-peak',
+   days:[
+    {name:'Monday',tag:'strength',detail:'Upper push — reduce rest periods.'},
+    {name:'Tuesday',tag:'zone2',detail:'50 min — sodium reduction now in effect.'},
+    {name:'Wednesday',tag:'hiit',detail:'HIIT class — Koningsweg.'},
+    {name:'Thursday',tag:'social',detail:'Office drinks — 1 drink max.'},
+    {name:'Friday',tag:'strength',detail:'Upper pull.'},
+    {name:'Saturday',tag:'strength',detail:'Lower body.'},
+    {name:'Sunday',tag:'yoga',detail:'Yoga + final full meal prep.'},
+  ]},
+  {label:'Week 10',dates:'22 Jun–9 Jul',phase:'Arrive',phaseClass:'phase-arrive',
+   days:[
+    {name:'Monday',tag:'strength',detail:'Upper push — lighter, pump-focused. High reps, shorter rest.'},
+    {name:'Tuesday',tag:'zone2',detail:'30 min easy — taper begins.'},
+    {name:'Wednesday',tag:'hiit',detail:'Last HIIT class — Koningsweg.'},
+    {name:'Thursday',tag:'social',detail:'Office drinks — no alcohol this week.'},
+    {name:'Friday',tag:'rest',detail:'Light walk only. Sodium cut. Drink 4L water.'},
+    {name:'Saturday',tag:'rest',detail:'Pack, rest, prep for travel. No training.'},
+    {name:'Sunday',tag:'travel',detail:'KL691 Amsterdam → Toronto, 02 Jul. You did it.'},
+  ]},
+];
+
+const tagMap = {strength:'tag-strength',zone2:'tag-zone2',hiit:'tag-hiit',yoga:'tag-yoga',social:'tag-social',rest:'tag-rest',travel:'tag-travel'};
+const tagLabel = {strength:'Strength',zone2:'Zone 2',hiit:'HIIT class',yoga:'Yoga',social:'Social',rest:'Rest',travel:'Travel'};
+
+const setupItems = [
+  {text:'Order Philips 7000 blender',sub:'Amazon — add to cart and order today'},
+  {text:'Order MCIRCO 20-piece glass containers',sub:'Amazon — €35.99, arrives tomorrow'},
+  {text:'Garmin charged + Garmin Connect set up',sub:'Enable HRV, Body Battery, sleep tracking — link to Strava'},
+  {text:'Book Wednesday HIIT class — Trainmore Koningsweg',sub:'Book in advance so you can\'t cancel'},
+  {text:'Book Sunday yoga class — Trainmore Koningsweg',sub:'Morning slot — done before meal prep'},
+  {text:'Buy whey protein (1–2kg tub)',sub:'Optimum Nutrition Gold Standard or MyProtein Impact Whey'},
+  {text:'Buy smoothie ingredients',sub:'Frozen spinach, frozen berries, almond milk, nut butter, bananas'},
+  {text:'Saturday supermarket shop',sub:'After gym — buy everything for the Sunday cook'},
+  {text:'Complete first Sunday meal prep',sub:'9 meals, ~2 hrs, label all containers before fridging'},
+];
+
+const checkpoints = [
+  {week:'Now — this week',title:'Get the shopping list',detail:'Full supermarket list for Sunday cook + smoothie ingredients.',urgent:true},
+  {week:'End of week 1',title:'First check-in',detail:'Log week 1 average weight. How did training feel? Any meals go wrong?',urgent:true},
+  {week:'End of week 2',title:'Habit audit',detail:'Are non-negotiables sticking? Sleep improving? Review Garmin HRV data.'},
+  {week:'Week 3',title:'Recipe rotation',detail:'Rotate dinner batch recipes — new proteins and flavours so it doesn\'t feel repetitive.'},
+  {week:'Week 4',title:'Progress review + refeed',detail:'Weigh in and assess trend. Introduce a refeed day if adaptation is showing.'},
+  {week:'Week 5–7',title:'Carb cycling structure',detail:'Build a training vs rest day carb split to accelerate the cut in the push phase.'},
+  {week:'Week 8',title:'Peak week strategy',detail:'Sodium reduction plan, training taper, and what to eat in the final 7 days.'},
+  {week:'Week 10',title:'Bermuda arrival protocol',detail:'Final water cut, what to wear, how to feel your best walking off the plane 9 July.'},
+];
+
+const dailyRules = [
+  {title:'185g protein — every day',detail:'Non-negotiable. Splits: ~52g breakfast smoothie, ~55g canteen lunch, ~50g prepped dinner, ~28g pre-gym shake.',accent:true},
+  {title:'Protein smoothie before leaving home',detail:'Blender out the night before. 90 seconds. No excuses.',accent:false},
+  {title:'No Uber Eats for dinner',detail:'Dinner is in the fridge. This one decision eliminates 90% of the problem.',accent:true},
+  {title:'10,000 steps (check Garmin)',detail:'Walk to meetings, take stairs, walk home from gym. Free calorie burn.',accent:false},
+  {title:'Phone down 22:30 — lights out 23:00',detail:'Sleep is where fat loss actually happens. Cortisol from poor sleep stores fat.',accent:true},
+  {title:'3–4L water daily',detail:'Reduces false hunger signals, improves gym performance, flushes sodium.',accent:false},
+  {title:'Skip dessert, 3pm snacks & canteen smoothies',detail:'Already doing this — keep it up every day without exception.',accent:false},
+  {title:'Leave office by 19:00 on training days',detail:'Gym bag packed the night before. Non-negotiable exit time.',accent:true},
+];
+
+const canteenDays = [
+  {day:'Monday 20 Apr',training:'Upper push',verdict:'Go for the chicken curry — high protein, straightforward. Load the salad bar alongside. Skip the peanut soup (high calorie) and cheesecake.',
+   picks:[{label:'Chicken curry',type:'yes'},{label:'Salad bar build',type:'yes'},{label:'Petjel salad (small)',type:'ok'},{label:'Surinamese tempeh',type:'ok'},{label:'Cheesecake',type:'no'},{label:'Canteen smoothie',type:'no'},{label:'3pm muffin',type:'no'}]},
+  {day:'Tuesday 21 Apr',training:'Zone 2',verdict:'Chicken mole is the pick — lean protein with a rich sauce. Go easy on the sauce if self-serving. Pico de gallo on the side is great. Skip the pasta salad.',
+   picks:[{label:'Chicken mole',type:'yes'},{label:'Chili con tofu',type:'yes'},{label:'Pico de gallo',type:'yes'},{label:'Mexican bowl (no sour cream)',type:'ok'},{label:'Banana cake',type:'no'},{label:'Pasta salad',type:'no'},{label:'3pm cherry roll',type:'no'}]},
+  {day:'Wednesday 22 Apr',training:'HIIT class',verdict:'Beef steak is the highest protein option today — HIIT day, so you need it. Niçoise bowl gives you good fats. The green canteen smoothie is actually vegetable-based today — fine to have.',
+   picks:[{label:'Beef steak',type:'yes'},{label:'Niçoise bowl',type:'yes'},{label:'Broccoli salad',type:'yes'},{label:'Green smoothie (veg-based)',type:'yes'},{label:'Quinoa & sweet potato stew',type:'ok'},{label:'Cheese kroket',type:'no'},{label:'Cinnamon roll',type:'no'}]},
+  {day:'Thursday 23 Apr',training:'Rest / social',verdict:'Rest day — lighter carbs ideally. Gnocchi with beef ragù is the protein star. Take half the gnocchi portion. Beef carpaccio from pick-and-mix is excellent — lean and high protein.',
+   picks:[{label:'Beef ragù (½ gnocchi)',type:'yes'},{label:'Beef carpaccio',type:'yes'},{label:'Root vegetables salad',type:'yes'},{label:'Vegan caprese',type:'ok'},{label:'Pizza Margherita',type:'no'},{label:'Farinata',type:'no'},{label:'Dessert',type:'no'}]},
+];
+
+const workoutSessions = [
+  {day:'Monday — Upper push',location:'Trainmore Beethovenstraat · 19:30',exercises:[
+    {name:'Barbell bench press',sets:'4',reps:'8–10',note:'Main compound — control the eccentric'},
+    {name:'Overhead press',sets:'4',reps:'8–10',note:'Dumbbell or barbell'},
+    {name:'Incline dumbbell press',sets:'3',reps:'10–12',note:'45° incline'},
+    {name:'Lateral raises',sets:'3',reps:'15',note:'Light — strict form, no swinging'},
+    {name:'Tricep pushdowns',sets:'3',reps:'12',note:'Cable, rope attachment'},
+    {name:'Cable flyes',sets:'3',reps:'12',note:'Low to high for upper chest'},
+  ]},
+  {day:'Wednesday — HIIT class',location:'Trainmore Koningsweg · pre-booked 19:30',exercises:[
+    {name:'Pre-booked group class',sets:'—',reps:'—',note:'Show up and follow the instructor. Push max effort every interval.'},
+    {name:'If no class: treadmill sprints',sets:'10–12×',reps:'40s on / 20s off',note:'5 min warmup, 5 min cooldown'},
+  ]},
+  {day:'Friday — Upper pull',location:'Trainmore Beethovenstraat · 19:00',exercises:[
+    {name:'Barbell row',sets:'4',reps:'8–10',note:'Overhand grip, chest to bar'},
+    {name:'Pull-ups or lat pulldown',sets:'4',reps:'max / 8',note:'Full range of motion'},
+    {name:'Seated cable row',sets:'3',reps:'10–12',note:'Neutral grip, elbows close'},
+    {name:'Face pulls',sets:'3',reps:'15',note:'Cable at head height — great for posture'},
+    {name:'Hammer curls',sets:'3',reps:'12',note:'Neutral grip both arms'},
+    {name:'Rear delt flyes',sets:'3',reps:'15',note:'Dumbbell or cable, light weight'},
+  ]},
+  {day:'Saturday — Lower body',location:'Trainmore Beethovenstraat · 10:00',exercises:[
+    {name:'Barbell squat',sets:'4',reps:'6–8',note:'Primary compound — go heavy with good form'},
+    {name:'Romanian deadlift',sets:'4',reps:'8–10',note:'Hinge at hips, feel the hamstring stretch'},
+    {name:'Leg press',sets:'3',reps:'12',note:'Feet shoulder-width, full depth'},
+    {name:'Walking lunges',sets:'3',reps:'12 each',note:'With dumbbells'},
+    {name:'Leg curl',sets:'3',reps:'12',note:'Machine, slow eccentric'},
+    {name:'Calf raises',sets:'4',reps:'15',note:'Full range — pause at the top'},
+  ]},
+];
+
+const weekendMeals = [
+  {day:'Saturday — training day (lower body)',meals:[
+    {slot:'Breakfast',food:'Protein smoothie — add 30g oats for extra carbs (training day)',kcal:'~560 kcal · 54g protein'},
+    {slot:'Lunch (post-gym)',food:'Harissa chicken + quinoa-chickpea base + roasted veg',kcal:'~710 kcal · 59g protein · 50g carbs'},
+    {slot:'Snack',food:'200g cottage cheese + rice cake or raw veg',kcal:'~160 kcal · 22g protein'},
+    {slot:'Dinner',food:'Spiced turkey mince + roasted veg (no extra carbs)',kcal:'~420 kcal · 50g protein'},
+  ],total:'~1,850 kcal · ~185g protein'},
+  {day:'Sunday — rest day (yoga only)',meals:[
+    {slot:'Breakfast (pre-yoga)',food:'Protein smoothie — standard, no oats',kcal:'~500 kcal · 52g protein'},
+    {slot:'Lunch',food:'Harissa chicken + roasted veg + 150g cottage cheese',kcal:'~520 kcal · 60g protein · low carb'},
+    {slot:'Snack',food:'200g Greek yoghurt + handful of berries',kcal:'~180 kcal · 16g protein'},
+    {slot:'Dinner',food:'Spiced turkey mince + roasted veg + big leafy salad',kcal:'~420 kcal · 50g protein'},
+  ],total:'~1,620 kcal · ~178g protein'},
+];
+
+const prepSteps = [
+  {time:'13:00',title:'Oven on + air fryer ready',detail:'Season chicken thighs with harissa paste, olive oil, lemon, garlic. Set air fryer to 200°C. Start rice cooker with 160g dry quinoa.'},
+  {time:'13:10',title:'Air fry chicken thighs',detail:'800g chicken thighs into air fryer — 18–20 min at 200°C. Crispier and faster than oven. Do two batches if needed.'},
+  {time:'13:15',title:'Prep roast veg',detail:'Chop 2 courgettes, 2 red peppers, 1 red onion, 200g cherry tomatoes. Toss with olive oil, cumin, oregano, salt. Into the oven at 200°C for 25 min.'},
+  {time:'13:20',title:'Make spiced turkey mince',detail:'Brown 500g turkey mince. Add garlic, onion, tinned tomatoes, smoked paprika, cumin, chilli. Simmer 20 min uncovered until thick.'},
+  {time:'13:45',title:'Prep cottage cheese + snacks',detail:'Portion 2× 150g cottage cheese into small containers. Wash and chop raw veg snacks — cucumber, carrot, celery.'},
+  {time:'14:00',title:'Pull everything + assemble',detail:'Slice and portion chicken into 5 containers. Divide turkey mince into 4 containers. Portion roasted veg (9 portions). Weigh and portion quinoa-chickpea for Saturday.'},
+  {time:'14:30',title:'Label, fridge, done',detail:'All containers labelled (Mon dinner, Tue dinner... Sat lunch etc). Stack in fridge. Smoothie ingredients in freezer bags. You\'re set for the week.'},
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────
+let state = JSON.parse(localStorage.getItem('blair_cut') || '{}');
+if (!state.checked) state.checked = Array.from({length:10}, () => Array(7).fill(false));
+if (!state.weights) state.weights = Array(11).fill('');
+if (!state.setup) state.setup = Array(setupItems.length).fill(false);
+if (!state.today) state.today = Array(6).fill(false);
+let activeWeek = state.activeWeek || 0;
+
+function save() { state.activeWeek = activeWeek; localStorage.setItem('blair_cut', JSON.stringify(state)); }
+
+// ── UTILS ─────────────────────────────────────────────────────────────
+function daysLeft() { return Math.max(0, Math.round((BERMUDA - new Date()) / 86400000)); }
+function currentWeekIdx() {
+  const start = new Date('2026-04-20');
+  const diff = Math.floor((new Date() - start) / 86400000 / 7);
+  return Math.max(0, Math.min(9, diff));
+}
+
+function makeCheckbox(checked, onclick) {
+  return `<div class="checkbox${checked?' checked':''}" onclick="${onclick}"></div>`;
+}
+
+// ── RENDER FUNCTIONS ──────────────────────────────────────────────────
+function renderDayCard(weekIdx, container) {
+  const w = weeks[weekIdx];
+  let html = `<div class="week-card-header"><div class="week-card-title">${w.label} · ${w.dates}</div><span class="phase-badge ${w.phaseClass}">${w.phase}</span></div>`;
+  w.days.forEach((d,i) => {
+    const done = state.checked[weekIdx][i];
+    html += `<div class="day-row${done?' completed':''}">
+      <div class="day-name">${d.name}</div>
+      <div><span class="day-tag ${tagMap[d.tag]}">${tagLabel[d.tag]}</span></div>
+      <div class="day-detail">${d.detail}</div>
+      ${makeCheckbox(done, `toggleDay(${weekIdx},${i})`)}
+    </div>`;
+  });
+  container.innerHTML = html;
+}
+
+function renderWeekProgress(weekIdx) {
+  const done = state.checked[weekIdx].filter(Boolean).length;
+  const pct = Math.round(done / 7 * 100);
+  return {done, pct};
+}
+
+function renderOverallProgress() {
+  let total = 0;
+  state.checked.forEach(w => w.forEach(d => { if(d) total++; }));
+  return Math.round(total / 70 * 100);
+}
+
+function renderDashboard() {
+  const curW = currentWeekIdx();
+  document.getElementById('dash-week').textContent = weeks[curW].label;
+  document.getElementById('dash-phase').textContent = weeks[curW].phase + ' phase';
+  document.getElementById('dash-days').textContent = daysLeft();
+  document.getElementById('sidebar-days').textContent = daysLeft();
+  const op = renderOverallProgress();
+  document.getElementById('dash-overall-pct').textContent = op + '%';
+  document.getElementById('dash-overall-bar').style.width = op + '%';
+  const card = document.getElementById('dash-week-card');
+  renderDayCard(curW, card);
+  // today items
+  const todayLabels = ['Protein smoothie before leaving home','Hit 185g protein target','10,000 steps (check Garmin)','Phone down 22:30 — lights out 23:00','3–4L water','No Uber Eats — dinner is in the fridge'];
+  const todayEl = document.getElementById('dash-today');
+  todayEl.innerHTML = todayLabels.map((l,i) => `
+    <div class="check-item${state.today[i]?' checked-item':''}" onclick="toggleToday(${i})">
+      ${makeCheckbox(state.today[i], `toggleToday(${i})`)}
+      <div class="check-text">${l}</div>
+    </div>`).join('');
+}
+
+function renderSetup() {
+  document.getElementById('setup-list').innerHTML = setupItems.map((s,i) => `
+    <div class="check-item${state.setup[i]?' checked-item':''}" onclick="toggleSetup(${i})">
+      ${makeCheckbox(state.setup[i], `toggleSetup(${i})`)}
+      <div><div class="check-text">${s.text}</div><div class="check-sub">${s.sub}</div></div>
+    </div>`).join('');
+}
+
+function renderCheckpoints() {
+  document.getElementById('cp-grid').innerHTML = checkpoints.map(cp => `
+    <div class="cp-card${cp.urgent?' now':''}">
+      <div class="cp-week-label${cp.urgent?' u':''}">${cp.week}</div>
+      <div class="cp-title">${cp.title}</div>
+      <div class="cp-detail">${cp.detail}</div>
+    </div>`).join('');
+}
+
+function renderWeekly() {
+  const nav = document.getElementById('week-nav');
+  nav.innerHTML = weeks.map((w,i) => {
+    const {pct} = renderWeekProgress(i);
+    const done = pct === 100;
+    return `<div class="week-btn${i===activeWeek?' active':''}${done?' done':''}" onclick="setWeek(${i})">${w.label}</div>`;
+  }).join('');
+  const {pct} = renderWeekProgress(activeWeek);
+  document.getElementById('week-prog-label').textContent = weeks[activeWeek].label + ' progress';
+  document.getElementById('week-prog-pct').textContent = pct + '%';
+  document.getElementById('week-prog-fill').style.width = pct + '%';
+  renderDayCard(activeWeek, document.getElementById('week-detail-card'));
+}
+
+function renderWorkouts() {
+  document.getElementById('workout-cards').innerHTML = workoutSessions.map(s => `
+    <div class="week-card" style="margin-bottom:16px">
+      <div class="week-card-header">
+        <div class="week-card-title">${s.day}</div>
+        <div style="font-size:11px;color:var(--text3)">${s.location}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 60px 80px;padding:10px 20px 4px;gap:12px">
+        <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">EXERCISE</div>
+        <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">SETS</div>
+        <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">REPS</div>
+      </div>
+      ${s.exercises.map(e => `
+        <div style="display:grid;grid-template-columns:1fr 60px 80px;padding:10px 20px;border-top:1px solid var(--border);gap:12px;align-items:start">
+          <div><div style="font-size:13px;color:var(--text);margin-bottom:2px">${e.name}</div><div style="font-size:11px;color:var(--text3)">${e.note}</div></div>
+          <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--text2)">${e.sets}</div>
+          <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--text2)">${e.reps}</div>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+function renderMeals() {
+  document.getElementById('weekend-meals').innerHTML = weekendMeals.map(d => `
+    <div class="meal-day" style="margin-bottom:12px">
+      <div class="meal-day-header"><div class="meal-day-name">${d.day}</div><div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text3)">${d.total}</div></div>
+      <div class="meal-slots">
+        ${d.meals.map(m => `<div class="meal-slot"><div class="meal-slot-label">${m.slot}</div><div class="meal-slot-main">${m.food}</div><div class="meal-slot-kcal">${m.kcal}</div></div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function renderCanteen() {
+  document.getElementById('canteen-days').innerHTML = canteenDays.map(d => `
+    <div class="canteen-day">
+      <div class="canteen-header">
+        <div class="canteen-day-name">${d.day}</div>
+        <span class="phase-badge phase-build">${d.training}</span>
+      </div>
+      <div class="canteen-verdict">${d.verdict}</div>
+      <div class="canteen-picks">${d.picks.map(p => `<span class="pick pick-${p.type}">${p.label}</span>`).join('')}</div>
+    </div>`).join('');
+}
+
+function renderPrep() {
+  document.getElementById('prep-content').innerHTML = `
+    <div class="section-title">Cooking order — Sunday afternoon</div>
+    <div class="week-card" style="margin-bottom:24px">
+      ${prepSteps.map((s,i) => `
+        <div class="day-row" style="grid-template-columns:60px 1fr">
+          <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--amber)">${s.time}</div>
+          <div><div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px">${s.title}</div><div style="font-size:12px;color:var(--text2);line-height:1.5">${s.detail}</div></div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function renderRules() {
+  document.getElementById('rules-grid').innerHTML = dailyRules.map(r => `
+    <div class="rule-card${r.accent?' rule-accent':''}">
+      <div class="rule-title">${r.title}</div>
+      <div class="rule-detail">${r.detail}</div>
+    </div>`).join('');
+}
+
+function renderWeight() {
+  const curW = currentWeekIdx();
+  const grid = document.getElementById('weight-full-grid');
+  grid.innerHTML = Array.from({length:11}, (_,i) => `
+    <div class="weight-cell${i===curW+1?' current-week':''}">
+      <div class="weight-cell-label">${i===0?'Start':'Wk '+i}</div>
+      <input type="number" step="0.1" placeholder="${i===0?'90.0':'—'}" value="${state.weights[i]}" onchange="updateWeight(${i},this.value)" />
+      <div class="weight-cell-sub">kg</div>
+    </div>`).join('');
+  renderWeightChart();
+}
+
+function renderWeightChart() {
+  const projected = [90,89.1,88.1,87.0,86.0,85.0,84.0,83.0,82.1,81.2,80.5];
+  const actual = state.weights.map(w => w ? parseFloat(w) : null);
+  const labels = ['Start','Wk 1','Wk 2','Wk 3','Wk 4','Wk 5','Wk 6','Wk 7','Wk 8','Wk 9','Wk 10'];
+  const existing = Chart.getChart('weightChart');
+  if (existing) existing.destroy();
+  new Chart(document.getElementById('weightChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {label:'Projected',data:projected,borderColor:'rgba(125,184,122,0.4)',borderDash:[5,3],pointRadius:3,pointBackgroundColor:'rgba(125,184,122,0.4)',tension:0.3,fill:false},
+        {label:'Actual',data:actual,borderColor:'#7db87a',pointRadius:5,pointBackgroundColor:'#7db87a',tension:0.3,fill:false,spanGaps:false},
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.parsed.y?.toFixed(1)+'kg'}}},
+      scales:{
+        y:{min:78,max:91,ticks:{color:'#55534f',callback:v=>v+'kg',stepSize:2},grid:{color:'rgba(255,255,255,0.05)'}},
+        x:{ticks:{color:'#55534f'},grid:{color:'rgba(255,255,255,0.05)'}}
+      }
+    }
+  });
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────────────
+function toggleDay(w, d) {
+  state.checked[w][d] = !state.checked[w][d];
+  save();
+  renderDashboard();
+  renderWeekly();
+}
+function toggleToday(i) {
+  state.today[i] = !state.today[i];
+  save();
+  renderDashboard();
+}
+function toggleSetup(i) {
+  state.setup[i] = !state.setup[i];
+  save();
+  renderSetup();
+}
+function updateWeight(i, v) {
+  state.weights[i] = v;
+  save();
+  renderWeightChart();
+}
+function setWeek(i) {
+  activeWeek = i;
+  save();
+  renderWeekly();
+}
+
+// ── NAV ───────────────────────────────────────────────────────────────
+function showPanel(id, navEl) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  if (navEl) navEl.classList.add('active');
+  if (id==='weight') renderWeight();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────
+renderDashboard();
+renderSetup();
+renderCheckpoints();
+renderWeekly();
+renderWorkouts();
+renderMeals();
+renderCanteen();
+renderPrep();
+renderRules();
+</script>
+</body>
+</html>
