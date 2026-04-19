@@ -1,7 +1,9 @@
 import "server-only";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import type { SessionState } from "@/components/WeekCard";
 import { dailyChecklistItems } from "@/data/plan";
+import { localDateString, readTzFromCookies } from "@/lib/timezone";
 
 /**
  * Server-side: load all session completion state keyed by `${week_number}-${day_index}`.
@@ -22,7 +24,8 @@ export async function loadAllSessions(): Promise<SessionState> {
 
 export async function loadTodayChecklist(): Promise<boolean[]> {
   const supabase = createClient();
-  const today = new Date().toISOString().slice(0, 10);
+  const tz = readTzFromCookies(cookies());
+  const today = localDateString(tz);
   const { data } = await supabase
     .from("daily_checklist")
     .select("item_index, completed")

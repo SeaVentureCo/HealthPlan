@@ -2,6 +2,7 @@ import Sidebar from "@/components/Sidebar";
 import BottomNav from "@/components/BottomNav";
 import MobileHeader from "@/components/MobileHeader";
 import SignOutButton from "@/components/SignOutButton";
+import TimezoneCookie from "@/components/TimezoneCookie";
 import { daysToBermuda } from "@/data/plan";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -19,6 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="md:grid md:grid-cols-[220px_1fr] min-h-screen">
+      <TimezoneCookie />
       <Sidebar daysToBermuda={days} />
       <MobileHeader daysToBermuda={days} />
       <SignOutButton />

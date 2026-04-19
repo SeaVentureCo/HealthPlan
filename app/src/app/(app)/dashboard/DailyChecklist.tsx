@@ -4,6 +4,7 @@ import { useState } from "react";
 import Checkbox from "@/components/Checkbox";
 import { dailyChecklistItems } from "@/data/plan";
 import { createClient } from "@/lib/supabase/client";
+import { detectBrowserTz, localDateString } from "@/lib/timezone";
 
 export default function DailyChecklist({ initialState }: { initialState: boolean[] }) {
   const [state, setState] = useState<boolean[]>(initialState);
@@ -12,7 +13,7 @@ export default function DailyChecklist({ initialState }: { initialState: boolean
   async function toggle(i: number) {
     const next = !state[i];
     setState((s) => s.map((v, idx) => (idx === i ? next : v)));
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localDateString(detectBrowserTz());
     const { error } = await supabase.from("daily_checklist").upsert(
       { item_index: i, date: today, completed: next },
       { onConflict: "item_index,date" },
